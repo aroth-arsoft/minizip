@@ -1,0 +1,54 @@
+--- a/contrib/minizip/Makefile
++++ b/contrib/minizip/Makefile
+@@ -1,20 +1,35 @@
+ CC=cc
+-CFLAGS+=-O -I../..
+-ZLIB=-L../.. -lz
++ZLIB=-lz
+ 
+-UNZ_OBJS = miniunz.o unzip.o ioapi.o
+-ZIP_OBJS = minizip.o zip.o   ioapi.o
++UNZ_OBJS = miniunz.o
++ZIP_OBJS = minizip.o
++LIBMINIZIP_OBJS = unzip.o zip.o ioapi.o
+ 
+ .c.o:
+-	$(CC) -c $(CFLAGS) $*.c
++	$(CC) -c $(CFLAGS) -O -fPIC $*.c
+ 
+-all: miniunz minizip
++all: libminizip.so libminizip.a miniunz minizip
+ 
+-miniunz:  $(UNZ_OBJS)
+-	$(CC) $(CFLAGS) -o $@ $(UNZ_OBJS) $(ZLIB) $(LDFLAGS)
++miniunz: libminizip.so $(UNZ_OBJS)
++	$(CC) $(CFLAGS) -o $@ $(UNZ_OBJS) -L. -lz -lminizip $(LDFLAGS)
+ 
+-minizip:  $(ZIP_OBJS)
+-	$(CC) $(CFLAGS) -o $@ $(ZIP_OBJS) $(ZLIB) $(LDFLAGS)
++minizip: libminizip.so $(ZIP_OBJS)
++	$(CC) $(CFLAGS) -o $@ $(ZIP_OBJS) -L. -lz -lminizip $(LDFLAGS)
++
++libminizip.so: ${LIBMINIZIP_OBJS}
++	${CC} ${LDFLAGS} -shared -Wl,-soname,libminizip.so.1 -Wl,--no-undefined -o $@.1 $? -lz
++	ln -s $@.1 $@
++
++libminizip.a: ${LIBMINIZIP_OBJS}
++	${AR} rvs $@ $?
++
++install : libminizip.a libminizip.so minizip miniunz
++	if ( test ! -d ${PREFIX}/lib ) ; then mkdir -p ${PREFIX}/lib ; fi
++	if ( test ! -d ${PREFIX}/include/minizip ) ; then mkdir -p ${PREFIX}/include/minizip ; fi
++	install -m 0644 libminizip.a ${PREFIX}/lib
++	install -m 0644 libminizip.so.1 ${PREFIX}/lib
++	ln -s libminizip.so.1 ${PREFIX}/lib/libminizip.so
++	install -m 0644 *.h ${PREFIX}/include/minizip
+ 
+ test:	miniunz minizip
+ 	./minizip test readme.txt
+@@ -23,4 +38,4 @@
+ 	./miniunz test.zip
+ 
+ clean:
+-	/bin/rm -f *.o *~ minizip miniunz
++	/bin/rm -f *.o *~ minizip miniunz libminizip.*

@@ -1,0 +1,5 @@
+minizip (1.2.8.dfsg-0ubuntu0~aroth~ppa1) unstable; urgency=low
+
+  * create package for minizip library
+
+ -- Andreas Roth <aroth@arsoft-online.com>  Mon, 21 Apr 2014 14:53:32 +0200
